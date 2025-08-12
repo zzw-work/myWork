@@ -3,8 +3,6 @@ import { Button, Space, Swiper, Toast } from "antd-mobile";
 
 import { View } from "src/components/View";
 import { Text } from "src/components/Text";
-import { Mask } from "src/components/Mask";
-import { Dialog } from "src/components/Dialog";
 import { ListView } from "src/components/ListView";
 
 import NavBar from "src/components/navBar";

@@ -94,10 +94,6 @@ import html2canvas from "html2canvas";
 
 // export default BarcodeBatchGenerator;
 
-// 平台特性检测
-const supportsIdleCallback = () =>
-  typeof window !== "undefined" && "requestIdleCallback" in window;
-
 const BarcodeBatchGenerator = ({
   barcodeValues = [],
   setBase64Results,
@@ -141,56 +137,6 @@ const BarcodeBatchGenerator = ({
     }
   };
 
-  // iOS兼容方案：使用requestAnimationFrame分片
-  const iosProcessQueue = () => {
-    const startTime = performance.now();
-    let processed = 0;
-
-    const processChunk = () => {
-      while (
-        processed < taskQueue.current.length &&
-        performance.now() - startTime < 16
-      ) {
-        // 每帧最多16ms
-        const task = taskQueue.current[processed];
-        processSingleBarcode(task.index).then(task.resolve);
-        processed++;
-        setProgress(Math.round((processed / barcodeValues.length) * 100));
-      }
-
-      if (processed < taskQueue.current.length) {
-        frameId.current = requestAnimationFrame(processChunk);
-      } else {
-        isProcessing.current = false;
-      }
-    };
-
-    processChunk();
-  };
-
-  // 统一任务调度入口
-  const startProcessing = () => {
-    if (isProcessing.current) return;
-
-    isProcessing.current = true;
-    taskQueue.current = barcodeValues.map((_, index) => ({
-      index,
-      resolve: (result) => {
-        setBase64Results((prev) => {
-          const newResults = [...prev];
-          newResults[index] = result;
-          return newResults;
-        });
-      },
-    }));
-
-    if (supportsIdleCallback()) {
-      window.requestIdleCallback(processIdleTasks, { timeout: 1000 });
-    } else {
-      iosProcessQueue();
-    }
-  };
-
   // 空闲时间处理任务（Android）
   const processIdleTasks = (deadline) => {
     while (
@@ -199,7 +145,6 @@ const BarcodeBatchGenerator = ({
     ) {
       const task = taskQueue.current.shift();
       const { index, resolve } = task;
-
       processSingleBarcode(index).then((result) => {
         setBase64Results((prev) => {
           const newResults = [...prev];
@@ -218,29 +163,30 @@ const BarcodeBatchGenerator = ({
     }
   };
 
+  // 统一任务调度入口
+  const startProcessing = () => {
+    if (isProcessing.current) return;
+
+    isProcessing.current = true;
+    taskQueue.current = barcodeValues.map((_, index) => ({
+      index,
+      resolve: (result) => {
+        setBase64Results((prev) => {
+          const newResults = [...prev];
+          newResults[index] = result;
+          return newResults;
+        });
+      },
+    }));
+
+    window.requestIdleCallback(processIdleTasks, { timeout: 1000 });
+  };
+
   useEffect(() => {
     if (barcodeRefs.current.length > 0) {
       startProcessing();
     }
   }, []);
-
-  // 启动批量处理
-  // const startBatchProcessing = () => {
-  //   if (isProcessing.current) return;
-
-  //   isProcessing.current = true;
-  //   setBase64Results(new Array(barcodeValues.length).fill(null));
-  //   setProgress(0);
-
-  //   // 创建任务队列
-  //   taskQueue.current = barcodeValues.map((_, index) => ({
-  //     index,
-  //     resolve: () => {},
-  //   }));
-
-  //   // 启动空闲时间处理
-  //   window.requestIdleCallback(processTaskQueue, { timeout: 1000 });
-  // };
 
   return (
     <div className="container mx-auto p-6">

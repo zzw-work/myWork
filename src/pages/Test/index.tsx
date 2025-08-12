@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import * as style from "./index.module.css";
 import * as styles from "./index.module.less";
 import BarcodeBatchGenerator from "./BarcodeBatchGenerator";
+import IOSBar from "./iosBar";
 
 // const BarcodeGenerator = ({ value = "123456789", options = {} }) => {
 //   const barcodeRef = useRef(null);
@@ -133,6 +134,9 @@ import BarcodeBatchGenerator from "./BarcodeBatchGenerator";
 //     </div>
 //   );
 // };
+// 平台特性检测
+const supportsIdleCallback = () =>
+  typeof window !== "undefined" && "requestIdleCallback" in window;
 
 const Test = () => {
   const [barcodeValue, setBarcodeValue] = useState("123456789");
@@ -161,6 +165,7 @@ const Test = () => {
   ];
   const [base64Results, setBase64Results] = useState([]);
   const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState([]);
 
   return (
     <div>
@@ -168,7 +173,7 @@ const Test = () => {
       <p className={styles.color}>Test page</p>
       <div
         onClick={() => {
-          console.log("点击了打印", base64Results);
+          console.log("点击了打印", base64Results, results);
         }}
         className={styles.color}
       >
@@ -185,31 +190,33 @@ const Test = () => {
           <p className={style.title}>生成进度: {progress}%</p>
         </div>
       )}
-      <BarcodeBatchGenerator
+      {/* {supportsIdleCallback() ? (
+        <BarcodeBatchGenerator
+          barcodeValues={sampleBarcodes}
+          setBase64Results={setBase64Results}
+          setProgress={setProgress}
+          // setBase64Image={setBase64Image}
+        />
+      ) : (
+        <IOSBar
+          barcodeValues={sampleBarcodes}
+          frameInterval={30} // 设置每帧最大处理时间(毫秒)
+          setResults={setResults}
+          setProgress={setProgress}
+        />
+      )} */}
+      {/* <BarcodeBatchGenerator
         barcodeValues={sampleBarcodes}
         setBase64Results={setBase64Results}
         setProgress={setProgress}
         // setBase64Image={setBase64Image}
+      /> */}
+      <IOSBar
+        barcodeValues={sampleBarcodes}
+        frameInterval={30} // 设置每帧最大处理时间(毫秒)
+        setResults={setResults}
+        setProgress={setProgress}
       />
-      {/* {base64Results.length > 0 && (
-        <div className="mt-6 border-t pt-6">
-          <h2 className="text-xl font-semibold mb-4">生成结果 (Base64数组)</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-60">
-            {JSON.stringify(
-              base64Results.map((b) => b?.substring(0, 30) + "..."),
-              null,
-              2
-            )}
-          </pre>
-        </div>
-      )} */}
-      {/* {base64Image && (
-        <div className="result">
-          <h3>Base64结果</h3>
-          <textarea readOnly value={base64Image.substring(0, 100) + "..."} />
-          <img src={base64Image} alt="条形码截图" />
-        </div>
-      )} */}
     </div>
   );
 };
